@@ -1,0 +1,279 @@
+---
+title: "Chicago 2022 Crime Data Explanatory Data Analysis"
+author: "Folorunso Oluseyi"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Introduction
+This report is aimed at analyzing crime data collated from the city of Chicago
+in 2022. This analysis is geared at providing insights into crime ((with the exception of murders where data exists for each victim) in the city, uncovering trends, and discovering crime hot spots in Chicago. The data that forms the basis of this analysis is the **Crimes in Chicago (Year Wise)** obtained from [Kaggle](https://www.kaggle.com/datasets/onlyrohit/crimes-in-chicago?datasetId=2737440)
+
+## Load the necessary libraries
+```{r load the libraries}
+library(tidyverse)
+library(scales)
+library(lubridate)
+library(plotly)
+library(MAP)
+library(mapdata)
+library(ggmap)
+```
+
+## Import the data
+Drop all null values, and check for duplicates. Duplicate is 0 so data is free from null values, and duplicates
+```{r import the dataset}
+crime <- read.csv("C:/Users/HP/Downloads/2022.csv")
+crime_df <- crime %>% drop_na()
+sum(duplicated(crime_df))
+
+```
+The data is explored to reveal its content
+```{r preview the data}
+
+str(crime_df)
+glimpse(crime_df)
+colnames(crime_df)
+```
+
+
+The data contains 219032 rows and 22 columns
+
+Having seen the content of the data, we begin our explanatory data analysis
+We wish to uncover:
+* Most common Crime in the city
+* How Often do Reported Crime lead to arrest.
+* Which Ward, District, Community Area have the most prevalent crimes
+* Total crimes reported on different days of the week
+* Total crimes reported on different months of the year
+
+We hope to answer all of the above in this report
+
+## Most common Crime in the city
+
+To deduce the most common crimes in Chicago, our focus shifts to the *Primary.Type* column. 
+```{r most common crimes}
+
+common_crimes <- crime_df %>% group_by(`Primary.Type`) %>% count() %>% arrange(desc(n)) %>% rename(times_reported = n)
+View(common_crimes)
+```
+
+The analysis shows that **Theft** is the most common reported crime in Chicago, with 50,075 reported cases in 2022.
+A graphical visualization of crimes in Chicago and number of times reported, helps us understand prevalent cases of theft is in Chicago.
+```{r most reported crimes bar grap}
+
+common_crimes_bar <-  ggplot(data = crime_df) + 
+  geom_bar(mapping = aes(x = Primary.Type, fill = Arrest), width = .80) +
+  scale_fill_manual(values = c("false" = "#FF0000", "true" = "#2B76CC")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Crimes in Chicago and Number of Times Reported in 2022",
+       x = "Crime",
+       y = " Number of reports made")
+
+ggplotly(common_crimes_bar)
+```
+
+The graph show the prevalence of **theft** in Chicago,and how it ranks far higher than other reported crimes.However, the graph shows the ratio of the arrest made in reported cases of every crime in the city. A quick observation of the graph shows that majority of crimes reported, do not lead to arrest. This brings us to the second focus of the report.
+
+## How Often do Reported Crime lead to arrest
+
+To deduce fully how often reported cases of crime in Chicago led to arrest in 2022, our focus is shifted to the **Arrest** column of our data.Arrest is categorized in boolean **true** for positive arrests, and **false** foe negatiive cases of arrest.
+```{r number of positive and negative arrests}
+crimes_arrest <- crime_df %>% group_by(Arrest) %>% count() %>% rename(num_of_arrest = n) 
+
+
+crimes_arrest_percentage <- crime_df %>% group_by(Arrest) %>% count() %>% rename(num_of_arrest = n) %>% 
+  mutate(percentage = scales::percent(num_of_arrest/sum(crimes_arrest$num_of_arrest)))
+
+
+ggplot(data = crimes_arrest_percentage) +
+  geom_col(mapping = aes(x ="", y = num_of_arrest, fill = Arrest), color = "black")  +
+  geom_text(aes(x ="", y = num_of_arrest, label = percentage, vjust = .5)) +
+  coord_polar(theta = "y") + 
+  scale_fill_manual(values = c("false" = "#FF0000", "true" = "#2B76CC")) +
+  theme_void()
+
+
+```
+
+The pie chart reveals that 11% of reported cases of crime led to arrest, which corresponds to 24,600 arrests in 2022 in Chicago City.
+
+## Wards with Most Reported Crimes
+
+The wards with the most number of crimes reported is given below
+```{r wards with most reported crimes}
+
+crimes_ward <- crime_df %>% group_by(Ward) %>% count() %>% arrange(desc(n)) %>% 
+  rename(times_reported = n)
+View(crimes_ward)
+```
+**Ward 42** has the most reported cases of crime, with a total of 11,612	 crimes reported from the Ward.
+**Ward 19** has the least reported cases of crime, with 1,894 crimes reported in 2022
+
+The bar plot depicting the number of reported crimes in each wards with positive and negative arrest is given below
+```{r bar plot of crimes reported in Wards}
+
+crimes_ward_plot <- ggplot(data = crime_df) +
+  geom_bar(mapping = aes(x = as.character(Ward), fill = Arrest)) +
+  scale_fill_manual(values = c("false" = "#FF0000", "true" = "#2B76CC")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Total Crimes Reported in Chicago Ward 2022",
+       x = "Wards",
+       y = " Number of reports made")
+ggplotly(crimes_ward_plot)
+
+```
+
+## Districts
+```{r districts with most reported crimes}
+
+crimes_district <- crime_df %>% group_by(District) %>% count() %>% arrange(desc(n)) %>% 
+  rename(times_reported = n)
+View(crimes_district)
+
+```
+
+District 6 has the most crime reported, with 13,620 reported cases in 2022.District 31 had a total of 8 crimes reported in 2022. A graphical visualization of crimes reported in different district in Chicago in 2022 is detailed below
+```{r bar plot of crimes reported in Districts}
+
+crimes_district_plot <- ggplot(data = crime_df) +
+  geom_bar(mapping = aes(x = as.character(District), fill = Arrest)) +
+  scale_fill_manual(values = c("false" = "#FF0000", "true" = "#2B76CC")) +
+  labs(title = "Total Crimes Reported in Chicago Ward 2022",
+       x = "District",
+       y = " Number of reports made")
+ggplotly(crimes_district_plot)
+
+```
+## Community Areas
+```{r Community Areas with most reported crimes}
+
+
+crimes_comm_areas <- crime_df %>% group_by(Community.Area) %>% count() %>% arrange(desc(n)) %>% 
+  rename(times_reported = n)
+View(crimes_comm_areas)
+
+```
+
+Community Area 25 had the most crimes reported in 2022, with 11,455 crimes reported, as opposed to community Area 9 which had 277 reported criminal cases.
+A graphical visualization of reported cases in Chicago and community areas is given below.
+```{r  bar plot of crimes reported in Community Areas}
+
+crime_comm_bar <- ggplot(data = crime_df) +
+  geom_bar(mapping = aes(x = as.character(Community.Area), fill = Arrest), width = 0.5) + 
+  scale_fill_manual(values = c("false" = "#FF0000", "true" = "#2B76CC")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Crimes in Various Community Areas in 2022",
+       x = "Community Areas",
+       y = " Number of reports made")
+ggplotly(crime_comm_bar)
+```
+
+## Total Crimes reported on each days of the Week in Chicago in 2022
+Focus shifts to determining the total crimes reported on various days of the week in Chicago in 2022. 
+The **crime_weekday** data frame shows the total crimes reported in each day of the week arranged in descending order.
+Notice that in the **as.Date** function, which converts the **Date** column to a character datatype, the format is given. This step is important as the date was saved in the month-day-year format. The **%Y** in the format informs R that the date is prefix with a 20 or 19 e.g 1988 or 2022. 
+
+```{r crimes in days of the week}
+crime_newdf <- crime_df %>% select(Date, Primary.Type, Arrest) %>%
+  mutate(new_date = as.Date(Date, format = "%m/%d/%Y"), week_day = weekdays(new_date), mon = month.abb[month(new_date)]) 
+head(crime_newdf)
+
+crime_weekday <- crime_newdf %>% group_by(week_day) %>% count() %>% arrange(desc(n))%>% 
+  rename(times_reported = n)
+crime_weekday
+```
+
+The crime_weekday shows that the most crime was mostly reported on Friday.
+A graphical representation of the number of days, and crime reported is given below
+
+```{r crimes in days of the week bar plot}
+
+crime_newdf$week_day <- factor(crime_newdf$week_day, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
+                                                                "Friday", "Saturday"))
+
+crime_weekday_bar <- crime_newdf  %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = week_day, fill = Arrest)) +
+  scale_fill_manual(values = c("false" = "#FF0000", "true" = "#2B76CC")) +
+  labs(title = "No. of Crimes Reported in Chicago on Diff. Days of the Week in 2022",
+       x = "Week Days",
+       y = " Number of reports made")
+
+ggplotly(crime_weekday_bar)
+
+
+```
+
+## Total Crimes reported in each Month in Chicago in 2022
+The process is repeated for months
+```{r Crimes in each month}
+crime_month <- crime_newdf %>% group_by(mon) %>% count() %>% arrange(desc(n))%>% 
+  rename(times_reported = n)
+crime_month
+```
+
+The most crime was reported in October
+A graphical representation of the months, and crime reported is given below
+```{r Crimes in each month bar plot}
+
+crime_newdf$mon <- factor(crime_newdf$mon, levels = c("Jan", "Feb", "Mar", "Apr","May", "Jun", "Jul", "Aug", 
+                                   "Sep", "Oct", "Nov", "Dec"))
+
+crime_month_bar <- ggplot(data = crime_newdf) +
+  geom_bar(mapping = aes(x = mon, fill = Arrest)) +
+  scale_fill_manual(values = c("false" = "#FF0000", "true" = "#2B76CC")) +
+  labs(title = "No. of Crimes Reported in Chicago in Diff. Months in 2022",
+       x = "Months",
+       y = " Number of reports made")
+
+ggplotly(crime_month_bar)
+```
+A line graph reveals the monthly trend of reported crimes in the city in 2022
+
+```{r Crimes reported in each month line plot}
+
+ggplot(data = crime_month, aes(x = mon, y = times_reported, group = 1)) +
+  geom_line(color = "#2B76CC", size = 1.5) +
+  geom_point() +
+  labs(title = "No. of Crimes Reported in Chicago on Months in 2022",
+       x = "Months",
+       y = " Number of reports made")
+
+
+```
+
+
+# Map View of Ares with Reported Crimes
+ 
+```{r}
+crime_location <- crime_df %>% select(Longitude, Latitude)
+         
+chicago <- get_stamenmap(bbox = c(left = -88.0225, bottom = 41.5949, 
+                                           right = -87.2713, top = 42.0677), zoom = 10)
+chicago_map <- ggmap(chicago)
+chicago_map + geom_point(data = crime_location, aes(x = Longitude, y = Latitude), color = "red")
+         
+         
+```
+# Coordinate map view of area with most crimes reported
+```{r}
+area_mostarrest <- crime_df %>% group_by(Longitude, Latitude) %>% count() %>% arrange(desc(n))
+area_mostarrest
+         
+         
+ggplotly(chicago_map + geom_point(data = filter(area_mostarrest, n == 284), aes(x = Longitude, y = Latitude)))
+```
+
+# Key Takeaways
+
+- 219,032 crimes were reported in 50 wards, 23 Districts, and 77 Community Areas.
+- Theft is the most reported case of crime.
+- Only 11% of crimes reported lead to arrest
+- Ward 42 has the most reported cases of crime and ward 19 the least.
+- District 6 had the most crimes reported, and district 31 had the least.
+- Community Area 25 had the most prevalent cases of reported crime, while community area 9 have the least.
+- Most crimes are reported on weekends, namely Friday and Saturday.
+- Most crimes are reported in summer months (June, July, August, September) and early fall (October)
+An interactive dashboard detailing the summary of these report can be accessed **[here]**(https://public.tableau.com/app/profile/oluseyi.folorunso/viz/CHICAGO2022CRIMEDASHBOARD/CHICAGO2022CRIMEDASHBOARD)
