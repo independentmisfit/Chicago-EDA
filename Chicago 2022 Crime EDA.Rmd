@@ -276,4 +276,4 @@ ggplotly(chicago_map + geom_point(data = filter(area_mostarrest, n == 284), aes(
 - Community Area 25 had the most prevalent cases of reported crime, while community area 9 have the least.
 - Most crimes are reported on weekends, namely Friday and Saturday.
 - Most crimes are reported in summer months (June, July, August, September) and early fall (October)
-An interactive dashboard detailing the summary of these report can be accessed **[here]**(https://public.tableau.com/app/profile/oluseyi.folorunso/viz/CHICAGO2022CRIMEDASHBOARD/CHICAGO2022CRIMEDASHBOARD)
+An interactive dashboard detailing the summary of these report can be accessed [<span style="color: blue">**HERE**</span>](https://public.tableau.com/app/profile/oluseyi.folorunso/viz/CHICAGO2022CRIMEDASHBOARD/CHICAGO2022CRIMEDASHBOARD)
