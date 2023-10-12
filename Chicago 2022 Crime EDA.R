@@ -164,6 +164,9 @@ ggplotly(crime_month_bar)
 
 ## Crimes reported in each month line plot
 
+crime_month$mon <- factor(crime_monthf$mon, levels = c("Jan", "Feb", "Mar", "Apr","May", "Jun", "Jul", "Aug", 
+                                                      "Sep", "Oct", "Nov", "Dec"))
+
 ggplot(data = crime_month, aes(x = mon, y = times_reported, group = 1)) +
   geom_line(color = "#2B76CC", size = 1.5) +
   geom_point() +

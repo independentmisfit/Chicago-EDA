@@ -233,6 +233,7 @@ ggplotly(crime_month_bar)
 A line graph reveals the monthly trend of reported crimes in the city in 2022
 
 ```{r Crimes reported in each month line plot}
+crime_newdf$mon <- factor(crime_newdf$mon, levels = c("Jan", "Feb", "Mar", "Apr","May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
 
 ggplot(data = crime_month, aes(x = mon, y = times_reported, group = 1)) +
   geom_line(color = "#2B76CC", size = 1.5) +
